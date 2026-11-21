@@ -54,7 +54,7 @@
   // its widgets on the first save.
   "pages": [
     { "template": "cb-home" },
-    { "template": "cb-game" },
+    { "template": "cb-game", "idleSec": 0 },
     { "template": "cb-procs" },
     { "template": "cb-keys" },
     { "template": "cb-sound" },

@@ -521,8 +521,12 @@ app.MapPost("/api/notify", async (HttpRequest req, PushStore push) =>
 });
 
 // ?countdown=0 switches at once; otherwise the phone counts down like for a rule.
-app.MapPost("/api/goto/{page}", (string page, int? countdown, PushStore push) =>
-    Results.Json(push.Emit("goto", JsonSerializer.SerializeToElement(new { page, countdown = countdown is { } c ? Math.Clamp(c, 0, 30) : (int?)null }))));
+// Capsul Box: ?rule=<имя>&hold=true держит страницу, пока не придёт POST /api/back/<имя> (игра: Капсула открывает «Игру»
+// при запуске и возвращает прежнюю страницу при выходе; без возврата на главную по простою)
+app.MapPost("/api/goto/{page}", (string page, int? countdown, string? rule, bool? hold, string? name, PushStore push) =>
+    Results.Json(push.Emit("goto", JsonSerializer.SerializeToElement(new { page, countdown = countdown is { } c ? Math.Clamp(c, 0, 30) : (int?)null,
+        rule = string.IsNullOrWhiteSpace(rule) ? null : rule, hold = hold == true, name }))));
+app.MapPost("/api/back/{rule}", (string rule, PushStore push) => Results.Json(push.Emit("back", JsonSerializer.SerializeToElement(new { rule }))));
 
 app.MapPost("/api/refresh", (bool? reload, PushStore push) =>
 {
