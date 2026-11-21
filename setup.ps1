@@ -49,7 +49,7 @@ param(
 )
 
 $Repo = 'ersinkoc/phonebox'
-$Package = 'net.oxog.phonebox.deskpanel'
+$Package = 'de.wikar.capsulbox'
 $SettingsUrl = 'http://127.0.0.1:8765'
 
 function Write-Step([string]$Text) { Write-Host ''; Write-Host "==> $Text" -ForegroundColor Cyan }

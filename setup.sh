@@ -19,7 +19,7 @@
 set -euo pipefail
 
 repo="ersinkoc/phonebox"
-package="net.oxog.phonebox.deskpanel"
+package="de.wikar.capsulbox"
 settings_url="http://127.0.0.1:8765"
 
 yes=0; phone=1; serial=""; autostart=1; start=1; extras=1; version=""; dry=0

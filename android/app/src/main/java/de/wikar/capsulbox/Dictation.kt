@@ -1,4 +1,4 @@
-package net.oxog.phonebox.deskpanel
+package de.wikar.capsulbox
 
 import android.Manifest
 import android.app.Activity

@@ -161,10 +161,10 @@ if [ "$apk" = 1 ]; then
   # Bash 3.2 treats an empty array as unset under nounset (the macOS system shell).
   if [ -n "$serial" ]; then
     "$adb" -s "$serial" install -r "$apkfile"
-    "$adb" -s "$serial" shell am start -n net.oxog.phonebox.deskpanel/.MainActivity >/dev/null
+    "$adb" -s "$serial" shell am start -n de.wikar.capsulbox/.MainActivity >/dev/null
   else
     "$adb" install -r "$apkfile"
-    "$adb" shell am start -n net.oxog.phonebox.deskpanel/.MainActivity >/dev/null
+    "$adb" shell am start -n de.wikar.capsulbox/.MainActivity >/dev/null
   fi
 fi
 

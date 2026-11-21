@@ -37,7 +37,7 @@ public sealed class AdbReverseTests : IDisposable
                 "if \"%4\"==\"pm\" (" + (installed ? "echo package:/data/app/base.apk& exit /b 0)" : "exit /b 1)"),
                 "if \"%4\"==\"content\" (" + (usbKey is null ? "echo No result found.& exit /b 0)" : "echo Row: 0 key=" + usbKey + "& exit /b 0)"),
                 "if \"%4\"==\"dumpsys\" (" + (appVersion is null ? "" : "echo     versionName=" + appVersion + "& ")
-                    + (usbKey is not null && ownsProvider ? "echo   [net.oxog.phonebox.deskpanel.usb]:& echo     Provider{3ec2f24 net.oxog.phonebox.deskpanel/.UsbKeyProvider}& " : "") + "exit /b 0)",
+                    + (usbKey is not null && ownsProvider ? "echo   [de.wikar.capsulbox.usb]:& echo     Provider{3ec2f24 de.wikar.capsulbox/.UsbKeyProvider}& " : "") + "exit /b 0)",
                 "if \"%6\"==\"set-home-activity\" if \"%2\"==\"" + homeRefused + "\" (echo Error: Failed to set default home.& exit /b 1)",
                 "if \"%6\"==\"set-home-activity\" (echo Success& exit /b 0)",
                 "exit /b 0", ""));
@@ -55,7 +55,7 @@ public sealed class AdbReverseTests : IDisposable
             "if [ \"$4\" = pm ]; then " + (installed ? "echo package:/data/app/base.apk; exit 0; fi" : "exit 1; fi"),
             "if [ \"$4\" = content ]; then " + (usbKey is null ? "echo 'No result found.'; exit 0; fi" : "echo 'Row: 0 key=" + usbKey + "'; exit 0; fi"),
             "if [ \"$4\" = dumpsys ]; then " + (appVersion is null ? "" : "echo '    versionName=" + appVersion + "'; ")
-                + (usbKey is not null && ownsProvider ? "printf '  [net.oxog.phonebox.deskpanel.usb]:\\n    Provider{3ec2f24 net.oxog.phonebox.deskpanel/.UsbKeyProvider}\\n'; " : "") + "exit 0; fi",
+                + (usbKey is not null && ownsProvider ? "printf '  [de.wikar.capsulbox.usb]:\\n    Provider{3ec2f24 de.wikar.capsulbox/.UsbKeyProvider}\\n'; " : "") + "exit 0; fi",
             "if [ \"$6\" = set-home-activity ] && [ \"$2\" = '" + homeRefused + "' ]; then echo 'Error: Failed to set default home.'; exit 1; fi",
             "if [ \"$6\" = set-home-activity ]; then echo Success; exit 0; fi",
             "exit 0", ""));
@@ -225,7 +225,7 @@ public sealed class AdbReverseTests : IDisposable
         const string awake = "shell settings put global stay_on_while_plugged_in 7";
         var calls = await RunUntil(fake, new { adbPath = fake, display = new { homeScreen = true, keepAwake = true, followComputerLock = false } }, null,
             c => c.Contains("-s FAKE2 " + awake) && c.Contains("-s FAKE1 " + awake));
-        Assert.Contains("-s FAKE2 shell cmd package set-home-activity net.oxog.phonebox.deskpanel/.HomeAlias", calls);
+        Assert.Contains("-s FAKE2 shell cmd package set-home-activity de.wikar.capsulbox/.HomeAlias", calls);
         Assert.Contains("-s FAKE1 " + awake, calls);
         Assert.Contains("-s FAKE2 " + awake, calls);
     }
@@ -272,7 +272,7 @@ public sealed class AdbReverseTests : IDisposable
                 display = new { homeScreen = false, keepAwake = false, followComputerLock = false, openOnConnect } },
             null, c => c.Count(x => x == "devices") >= 2);
         Assert.Contains("-s FAKE1 reverse tcp:8765 tcp:8765", calls);
-        Assert.Equal(openOnConnect, calls.Contains("-s FAKE1 shell am start -n net.oxog.phonebox.deskpanel/.MainActivity"));
+        Assert.Equal(openOnConnect, calls.Contains("-s FAKE1 shell am start -n de.wikar.capsulbox/.MainActivity"));
         Assert.Equal(openOnConnect, calls.Contains("-s FAKE1 shell input keyevent KEYCODE_WAKEUP"));
     }
 
@@ -289,7 +289,7 @@ public sealed class AdbReverseTests : IDisposable
         var calls = await RunUntil(fake, new { adbPath = fake, deviceSerial = "FAKE1",
                 display = new { homeScreen = false, keepAwake = false, followComputerLock = false, openOnConnect = true } },
             null, c => c.Count(x => x == "devices") >= 3);
-        Assert.Equal(1, calls.Count(x => x == "-s FAKE1 shell am start -n net.oxog.phonebox.deskpanel/.MainActivity"));
+        Assert.Equal(1, calls.Count(x => x == "-s FAKE1 shell am start -n de.wikar.capsulbox/.MainActivity"));
         // and the rule is set once: setting it again drops the panel's open connection
         Assert.Equal(1, calls.Count(x => x == "-s FAKE1 reverse tcp:8765 tcp:8765"));
         Assert.DoesNotContain("-s FAKE1 reverse --list", calls);
@@ -347,10 +347,10 @@ public sealed class AdbReverseTests : IDisposable
     }
 
     private const string UsbKey = "k3Y_0123456789abcdefghijklmnopqrstuvwxyzABCD";
-    private const string KeyQuery = "-s FAKE1 shell content query --uri content://net.oxog.phonebox.deskpanel.usb/key";
+    private const string KeyQuery = "-s FAKE1 shell content query --uri content://de.wikar.capsulbox.usb/key";
     private const string Pin = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
-    private const string PinWrite = "-s FAKE1 shell content insert --uri content://net.oxog.phonebox.deskpanel.usb/pin --bind fp:s:" + Pin;
-    private const string Dumpsys = "-s FAKE1 shell dumpsys package net.oxog.phonebox.deskpanel";
+    private const string PinWrite = "-s FAKE1 shell content insert --uri content://de.wikar.capsulbox.usb/pin --bind fp:s:" + Pin;
+    private const string Dumpsys = "-s FAKE1 shell dumpsys package de.wikar.capsulbox";
 
     /// <summary>
     /// The tunnel ends on the agent's USB port, not on the local port the settings page and the hooks use, and the agent
@@ -362,7 +362,7 @@ public sealed class AdbReverseTests : IDisposable
         var fake = FakeAdb(["FAKE1"], "", homeRefused: null, usbKey: UsbKey);
         var usb = new UsbLink(45678, Pin);
         var calls = await RunUntil(fake, new { adbPath = fake, deviceSerial = "FAKE1", display = new { homeScreen = false, keepAwake = false, followComputerLock = false } },
-            new AgentEndpoint(8765), c => c.Contains("-s FAKE1 shell am start -n net.oxog.phonebox.deskpanel/.MainActivity"), usb);
+            new AgentEndpoint(8765), c => c.Contains("-s FAKE1 shell am start -n de.wikar.capsulbox/.MainActivity"), usb);
         Assert.Contains("-s FAKE1 reverse tcp:8765 tcp:45678", calls);
         Assert.DoesNotContain("-s FAKE1 reverse tcp:8765 tcp:8765", calls);
         Assert.Contains(KeyQuery, calls);
@@ -370,7 +370,7 @@ public sealed class AdbReverseTests : IDisposable
         Assert.True(Array.IndexOf(calls, Dumpsys) < Array.IndexOf(calls, KeyQuery), "the provider's owner is checked first");
         Assert.True(usb.HasKey("FAKE1"));
         Assert.Equal(UsbLink.Access.Allowed, usb.Authorize("GET", "/api/state", "", "Bearer " + UsbKey));
-        Assert.Contains("-s FAKE1 shell am start -n net.oxog.phonebox.deskpanel/.MainActivity", calls);
+        Assert.Contains("-s FAKE1 shell am start -n de.wikar.capsulbox/.MainActivity", calls);
     }
 
     /// <summary>

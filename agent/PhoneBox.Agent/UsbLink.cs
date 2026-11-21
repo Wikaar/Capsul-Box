@@ -25,11 +25,11 @@ public sealed partial class UsbLink(int port, string pin)
     /// <summary>SHA-256 of the tunnel's TLS certificate (lower-case hex), which the app pins.</summary>
     public string Pin { get; } = pin;
 
-    public const string Package = "net.oxog.phonebox.deskpanel";
+    public const string Package = "de.wikar.capsulbox";
     /// <summary>The content provider in the PhoneBox app that hands its USB key to the adb shell.</summary>
-    public const string KeyUri = "content://net.oxog.phonebox.deskpanel.usb/key";
+    public const string KeyUri = "content://de.wikar.capsulbox.usb/key";
     /// <summary>Where the agent writes its certificate's fingerprint (insert, also DUMP only).</summary>
-    public const string PinUri = "content://net.oxog.phonebox.deskpanel.usb/pin";
+    public const string PinUri = "content://de.wikar.capsulbox.usb/pin";
 
     private readonly ConcurrentDictionary<string, string> _keys = new(); // adb serial -> the key its app made
     private int _unknownKey;
@@ -83,13 +83,13 @@ public sealed partial class UsbLink(int port, string pin)
         KeyRow().Match(output) is { Success: true } m ? m.Groups[1].Value : null;
 
     /// <summary>
-    /// True when "dumpsys package net.oxog.phonebox.deskpanel" lists the key provider as the app's own. Another app
+    /// True when "dumpsys package de.wikar.capsulbox" lists the key provider as the app's own. Another app
     /// could have taken the provider name while an older PhoneBox without it was installed; the name can belong to one
     /// app only, so the app's own listing settles it. Output in any other shape counts as not the app's.
     /// </summary>
     internal static bool OwnsKeyProvider(string dumpsys) => OwnedProvider().IsMatch(dumpsys);
 
-    [GeneratedRegex(@"^\s*\[net\.oxog\.phonebox\.deskpanel\.usb\]:\s*\r?\n\s*Provider\{[0-9a-f]+ net\.oxog\.phonebox\.deskpanel/(?:\.|net\.oxog\.phonebox\.deskpanel\.)UsbKeyProvider\}", RegexOptions.Multiline)]
+    [GeneratedRegex(@"^\s*\[de\.wikar\.capsulbox\.usb\]:\s*\r?\n\s*Provider\{[0-9a-f]+ de\.wikar\.capsulbox/(?:\.|de\.wikar\.capsulbox\.)UsbKeyProvider\}", RegexOptions.Multiline)]
     private static partial Regex OwnedProvider();
 
     /// <summary>The app's versionName in "dumpsys package" output, or null.</summary>

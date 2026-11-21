@@ -10,15 +10,15 @@ fun signingValue(name: String): String? =
     (project.findProperty(name) as String?) ?: System.getenv(name)
 
 android {
-    namespace = "net.oxog.phonebox.deskpanel"
+    namespace = "de.wikar.capsulbox"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "net.oxog.phonebox.deskpanel"
+        applicationId = "de.wikar.capsulbox"
         minSdk = 21 // Android 5.0; see CONTRIBUTING.md before changing it
         targetSdk = 35
-        versionCode = 47
-        versionName = "0.9.26"
+        versionCode = 1
+        versionName = "0.1.0"
     }
 
     signingConfigs {

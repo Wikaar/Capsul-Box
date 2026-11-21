@@ -1,4 +1,4 @@
-package net.oxog.phonebox.deskpanel
+package de.wikar.capsulbox
 
 import java.io.InputStream
 

@@ -1,4 +1,4 @@
-package net.oxog.phonebox.deskpanel
+package de.wikar.capsulbox
 
 import android.content.Context
 import android.net.Uri
@@ -550,7 +550,7 @@ class AgentLink(private val context: Context) {
                 if (uri == null) return null
                 val raw = when {
                     uri.scheme == "https" && uri.host == "ersinkoc.github.io" && uri.path?.startsWith("/phonebox/pair") == true -> uri.encodedFragment
-                    uri.scheme == "phonebox" && uri.host == "pair" -> uri.encodedQuery
+                    uri.scheme == "capsulbox" && uri.host == "pair" -> uri.encodedQuery
                     else -> null
                 } ?: return null
                 val q = raw.split('&').mapNotNull { part ->
