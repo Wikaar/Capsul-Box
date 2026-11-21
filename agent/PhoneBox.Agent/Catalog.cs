@@ -23,6 +23,26 @@ public static class Catalog
     public static readonly string WidgetsJson = Read("widgets.json");
     public static readonly string TemplatesJson = Read("templates.json");
 
+    /// <summary>Capsul Box: виджеты, которые предлагает редактор (остальные PhoneBox-виджеты скрыты, но код и старые
+    /// настройки с ними продолжают работать).</summary>
+    public static readonly IReadOnlySet<string> CapsulWidgets = new HashSet<string>
+    {
+        "clock", "weather", "forecast", "media", "volume", "stat", "gauge", "chart", "meters", "gpu", "topprocs", "processes",
+        "shortcuts", "button", "discord", "discord-controls", "batteries", "battery", "label", "timer", "stack",
+        "audio-mixer", "app-volume", "device-volume", "audio-outputs", "microphone", "media-remote", "media-seek",
+        "power-controls", "system-keys", "hotkeys", "macro-pad", "push",
+    };
+
+    /// <summary>Каталог для редактора: только виджеты Capsul Box и шаблоны cb-*.</summary>
+    public static readonly string EditorWidgetsJson = Filter(WidgetsJson, e => CapsulWidgets.Contains(e.GetProperty("type").GetString()!));
+    public static readonly string EditorTemplatesJson = Filter(TemplatesJson, e => e.GetProperty("id").GetString()!.StartsWith("cb-", StringComparison.Ordinal));
+
+    private static string Filter(string json, Func<JsonElement, bool> keep)
+    {
+        using var doc = JsonDocument.Parse(json);
+        return "[" + string.Join(",", doc.RootElement.EnumerateArray().Where(keep).Select(e => e.GetRawText())) + "]";
+    }
+
     public static readonly IReadOnlyList<TemplateDef> Templates =
         JsonSerializer.Deserialize<List<TemplateDef>>(TemplatesJson, Opts) ?? [];
 

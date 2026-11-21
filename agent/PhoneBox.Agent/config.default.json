@@ -1,5 +1,5 @@
 {
-  // PhoneBox settings. Easiest to edit from the tray icon > Settings (http://127.0.0.1:8765).
+  // Capsul Box settings (based on PhoneBox). Easiest to edit from the tray icon > Settings (http://127.0.0.1:8765).
   // Manual edits are picked up on the next request; no restart needed.
 
   // Only use the phone with this serial number (null = every connected Android device)
@@ -8,7 +8,7 @@
   "adbPath": null,
 
   // Weather location (Open-Meteo, no API key required) and the temperature unit: "celsius" or "fahrenheit"
-  "weather": { "city": "Tallinn", "lat": 59.437, "lon": 24.745, "unit": "celsius", "model": "" },
+  "weather": { "city": "Schwerin", "lat": 53.635, "lon": 11.401, "unit": "celsius", "model": "" },
 
   // Claude Code chats in the sessions widget. Both are off, because they come from your prompts: "shareSessionTitles" shows each
   // chat's title on the phone (without it only the folder name is shown and no title is read); "shareConversation" lets the phone
@@ -53,15 +53,12 @@
   // music, clock, focus, world, dashboard, devops, feeds, ambient, markets, daily, status, calm) and is replaced by
   // its widgets on the first save.
   "pages": [
-    { "template": "home" },
-    { "template": "ai" },
-    { "template": "work" },
-    { "template": "system" },
-    { "template": "procs" },
-    { "template": "deck" },
-    { "template": "music" },
-    { "template": "focus", "enabled": false },
-    { "template": "world", "enabled": false }
+    { "template": "cb-home" },
+    { "template": "cb-game" },
+    { "template": "cb-procs" },
+    { "template": "cb-keys" },
+    { "template": "cb-sound" },
+    { "template": "cb-discord" }
   ],
 
   // Shortcut keys. The phone only sends the "id"; commands live in this file only.
