@@ -214,7 +214,7 @@ b47da3d09583268d7bacef2d4375555313bf455af8a3ab16fd4d7ee95082826e  PhoneBoxAgent-
             }
 
             var cfgPath = Path.Combine(dir, "config.json");
-            File.WriteAllText(cfgPath, JsonSerializer.Serialize(new { adbPath = fakeAdb, updates = new { auto = false } }));
+            File.WriteAllText(cfgPath, JsonSerializer.Serialize(new { adbPath = fakeAdb, updates = new { auto = false, repo = "test/repo" } }));
             var cfg = new ConfigStore(cfgPath);
             var adb = new AdbReverse(cfg, NullLogger<AdbReverse>.Instance);
             var devicesField = typeof(AdbReverse).GetField("_devices", BindingFlags.Instance | BindingFlags.NonPublic)!;
