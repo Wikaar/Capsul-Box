@@ -689,6 +689,8 @@ app.MapGet("/api/steam/avatar", async (string id, SteamMonitor steam, Cancellati
 
 // Battery levels of wireless devices (headphones, mice, keyboards…), for the Device batteries widget.
 app.MapGet("/api/batteries", (BatteryMonitor b) => Results.Json(new { devices = b.Snapshot() }));
+// Capsul Box: Капсула присылает заряд своих устройств (только этот компьютер: путь не открыт ни для USB, ни для Wi-Fi)
+app.MapPost("/api/capsula/batteries", (CapsulaBatteries body, BatteryMonitor b) => { b.ReportExternal(body.Devices); return Results.Ok(); });
 
 // Settings › Rules › Test: runs a rule's action once (the rule may be unsaved).
 app.MapPost("/api/rules/test", (RuleConfig rule, RuleEngine rules) =>
@@ -1148,3 +1150,5 @@ public partial class Program
             : "The shortcut failed. The agent log on the computer has the details.";
 }
 
+/// <summary>Capsul Box: заряд устройств от Капсулы.</summary>
+public sealed record CapsulaBatteries(List<DeviceBattery>? Devices);

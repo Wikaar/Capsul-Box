@@ -33,8 +33,28 @@ public sealed partial class BatteryMonitor(ILogger<BatteryMonitor> log) : Backgr
     public IReadOnlyList<DeviceBattery> Snapshot()
     {
         Interlocked.Exchange(ref _lastRequest, Environment.TickCount64);
-        return _devices;
+        var external = _external;
+        if (external.Count == 0 || Environment.TickCount64 - Interlocked.Read(ref _externalAt) > ExternalTtlMs) return _devices;
+        // Capsul Box: устройства из Капсулы (JBL через QuantumENGINE, HeadsetControl, Windows) — главнее своих, совпадения по имени не дублируются
+        return SortDevices(external.Concat(_devices.Where(d => !external.Any(e => string.Equals(e.Name, d.Name, StringComparison.OrdinalIgnoreCase)))));
     }
+
+    /// <summary>Сколько держать список из Капсулы без обновления (она шлёт его каждые 20 с).</summary>
+    internal const long ExternalTtlMs = 90_000;
+    private volatile IReadOnlyList<DeviceBattery> _external = [];
+    private long _externalAt = long.MinValue;
+
+    /// <summary>Capsul Box: Капсула сообщает заряд своих устройств; только устройства с известным процентом.</summary>
+    public void ReportExternal(IEnumerable<DeviceBattery>? devices)
+    {
+        _external = (devices ?? [])
+            .Where(d => !string.IsNullOrWhiteSpace(d.Name) && d.Level is >= 0 and <= 100)
+            .Select(d => d with { Name = d.Name.Trim().Length > 64 ? d.Name.Trim()[..64] : d.Name.Trim(), Kind = Kinds.Contains(d.Kind) ? d.Kind : "other" })
+            .Take(16).ToList();
+        Interlocked.Exchange(ref _externalAt, Environment.TickCount64);
+    }
+
+    private static readonly HashSet<string> Kinds = ["headphones", "mouse", "keyboard", "controller", "laptop", "pen", "other"];
 
     protected override async Task ExecuteAsync(CancellationToken ct)
     {
