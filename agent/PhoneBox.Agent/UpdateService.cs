@@ -109,8 +109,9 @@ public sealed class UpdateService(ConfigStore cfg, AdbReverse adb, IHostApplicat
     {
         try
         {
-            _state = "checking";
             var repo = cfg.Get().Updates.Repo;
+            if (string.IsNullOrWhiteSpace(repo)) return; // Capsul Box: обновления выключены
+            _state = "checking";
             using var doc = JsonDocument.Parse(await ApiStringAsync($"https://api.github.com/repos/{repo}/releases/latest", ct));
             var r = doc.RootElement;
             foreach (var a in r.GetProperty("assets").EnumerateArray())
