@@ -97,6 +97,7 @@ AddMonitor<DockerMonitor>(builder.Services);
 AddMonitor<ObsMonitor>(builder.Services);
 AddMonitor<DiscordMonitor>(builder.Services);
 AddMonitor<SteamMonitor>(builder.Services);
+builder.Services.AddSingleton<SteamLibrary>();
 AddMonitor<BatteryMonitor>(builder.Services);
 AddMonitor<RuleEngine>(builder.Services);
 AddMonitor<ChargeGuard>(builder.Services);
@@ -687,6 +688,20 @@ app.MapGet("/api/steam", (SteamMonitor steam, ConfigStore cfg) =>
         snapshot = steam.Snapshot(includeFriends, includeOffline, includeActivity),
     });
 });
+// Capsul Box: библиотека Steam на этом ПК — установленные игры, обложки и запуск (без ключа API)
+app.MapGet("/api/steam/library", (SteamLibrary lib) => Results.Json(new
+{
+    found = SteamLibrary.SteamPath() is not null,
+    games = lib.Games().Select(g => new { id = g.Id, name = g.Name, lastPlayed = g.LastPlayed }),
+}));
+app.MapGet("/api/steam/cover", async (string? id, SteamLibrary lib, HttpContext ctx, CancellationToken ct) =>
+{
+    if (await lib.CoverAsync(id, ct) is not { } img) return Results.NotFound();
+    ctx.Response.Headers.CacheControl = "private, max-age=86400";
+    return Results.File(img.Data, img.Type, lastModified: null, entityTag: null, enableRangeProcessing: false);
+});
+app.MapPost("/api/steam/launch", (string? id, SteamLibrary lib) =>
+    lib.Launch(id) is { } error ? Results.BadRequest(new { error }) : Results.Ok(new { ok = true }));
 app.MapGet("/api/steam/avatar", async (string id, SteamMonitor steam, CancellationToken ct) =>
     await steam.AvatarAsync(id, ct) is { } img
         ? Results.File(img.Data, img.Type, lastModified: null, entityTag: null, enableRangeProcessing: false) : Results.NotFound());

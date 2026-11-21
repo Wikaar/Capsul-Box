@@ -441,6 +441,65 @@ W.steam = {
   },
 };
 
+// Capsul Box: библиотека Steam этого ПК — обложки установленных игр, недавние сначала; два нажатия запускают игру.
+const steamCovers = new Map(); // id → objectURL | null (нет обложки) | Promise
+function steamCover(id) {
+  if (steamCovers.has(id)) return steamCovers.get(id);
+  const p = fetch(`${API}/steam/cover?id=${encodeURIComponent(id)}`, { headers: PANEL_HEADERS })
+    .then((r) => (r.ok ? r.blob() : null))
+    .then((b) => { const url = b ? URL.createObjectURL(b) : null; steamCovers.set(id, url); return url; })
+    .catch(() => { steamCovers.delete(id); return null; });
+  steamCovers.set(id, p);
+  return p;
+}
+W['steam-library'] = {
+  needs: ['tick'],
+  create(box, { o }) {
+    let data = null, failed = false, lastKey = '', armed = null, armedTimer = 0;
+    const load = async () => {
+      try { data = await api('/steam/library', 'GET', 5000); failed = false; } catch (_) { failed = true; }
+    };
+    const launch = async (g) => {
+      haptic();
+      try {
+        const r = await fetch(`${API}/steam/launch?id=${encodeURIComponent(g.id)}`, { method: 'POST', cache: 'no-store', headers: PANEL_HEADERS });
+        if (r.ok) toast('Запускаю ' + g.name, 'ok');
+        else toast((await r.json().catch(() => ({}))).error || 'Steam не запустил игру', 'err');
+      } catch (_) { toast(t('panel.pcNoAnswer'), 'err'); }
+    };
+    const tile = (g) => {
+      const img = h('div', 'sl-cover', h('span', 'sl-initial', [...g.name][0] || '🎮'));
+      const el = h('div', 'sl-game', img, h('div', 'sl-name', g.name));
+      const show = (url) => { if (url) { const i = h('img'); i.alt = ''; i.decoding = 'async'; i.src = url; img.replaceChildren(i); } };
+      const c = steamCover(g.id);
+      if (c instanceof Promise) c.then(show); else show(c);
+      el.addEventListener('click', () => {
+        if (armed === g.id) { armed = null; clearTimeout(armedTimer); box.querySelectorAll('.sl-game.armed').forEach((x) => x.classList.remove('armed')); launch(g); return; }
+        haptic();
+        armed = g.id;
+        box.querySelectorAll('.sl-game.armed').forEach((x) => x.classList.remove('armed'));
+        el.classList.add('armed');
+        clearTimeout(armedTimer);
+        armedTimer = setTimeout(() => { armed = null; el.classList.remove('armed'); }, 3000);
+      });
+      return el;
+    };
+    const render = () => {
+      const key = JSON.stringify([data, failed, box.clientHeight]);
+      if (key === lastKey) return;
+      lastKey = key;
+      const title = h('div', 'w-title', o.title || 'Игры Steam');
+      if (!data) { box.replaceChildren(title, h('div', 'empty', t(failed ? 'w.unavailable' : 'w.loading'))); return; }
+      if (!data.found) { box.replaceChildren(title, h('div', 'empty', 'Steam на этом компьютере не найден')); return; }
+      const games = (data.games || []).slice(0, +o.max || 60);
+      if (!games.length) { box.replaceChildren(title, h('div', 'empty', 'Нет установленных игр')); return; }
+      box.replaceChildren(h('div', 'st-head', title, h('span', 'st-count', 'нажми дважды — запуск')), h('div', 'sl-grid', ...games.map(tile)));
+    };
+    const tick = every(60_000, async () => { await load(); render(); });
+    return { update: () => { tick(); render(); } };
+  },
+};
+
 // A short local history of public Steam presence changes (not private chat messages).
 W['steam-activity'] = {
   needs: ['tick'],

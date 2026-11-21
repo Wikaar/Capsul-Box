@@ -55,6 +55,7 @@
   "pages": [
     { "template": "cb-home" },
     { "template": "cb-game", "idleSec": 0 },
+    { "template": "cb-games" },
     { "template": "cb-procs" },
     { "template": "cb-keys" },
     { "template": "cb-sound" },
