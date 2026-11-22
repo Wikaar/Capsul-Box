@@ -14,6 +14,6 @@
     <string name="pair_failed_answer">%1$s answered %2$d.</string>
     <string name="pair_failed_certificate">The computer has a different certificate than the QR code. Start pairing again.</string>
     <string name="ok">OK</string>
-    <string name="scan_prompt">Point the camera at the QR code in the agent's Wi-Fi pairing window</string>
+    <string name="scan_prompt">Point the camera at the QR code in the agent\'s Wi-Fi pairing window</string>
     <string name="scan_not_pairing">This is not a Capsul Box pairing QR code</string>
 </resources>
