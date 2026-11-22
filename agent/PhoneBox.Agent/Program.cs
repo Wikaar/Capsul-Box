@@ -98,6 +98,7 @@ AddMonitor<ObsMonitor>(builder.Services);
 AddMonitor<DiscordMonitor>(builder.Services);
 AddMonitor<SteamMonitor>(builder.Services);
 builder.Services.AddSingleton<SteamLibrary>();
+builder.Services.AddSingleton<ShutdownTimer>();
 AddMonitor<BatteryMonitor>(builder.Services);
 AddMonitor<RuleEngine>(builder.Services);
 AddMonitor<ChargeGuard>(builder.Services);
@@ -688,6 +689,11 @@ app.MapGet("/api/steam", (SteamMonitor steam, ConfigStore cfg) =>
         snapshot = steam.Snapshot(includeFriends, includeOffline, includeActivity),
     });
 });
+// Capsul Box: таймер выключения ПК (нужно разрешить управление питанием в настройках)
+app.MapGet("/api/shutdown-timer", (ShutdownTimer t) => Results.Json(t.State()));
+app.MapPost("/api/shutdown-timer", async (int minutes, ShutdownTimer t, CancellationToken ct) =>
+    await t.SetAsync(minutes, ct) is { } error ? Results.BadRequest(new { error }) : Results.Json(t.State()));
+
 // Capsul Box: библиотека Steam на этом ПК — установленные игры, обложки и запуск (без ключа API)
 app.MapGet("/api/steam/library", (SteamLibrary lib) => Results.Json(new
 {

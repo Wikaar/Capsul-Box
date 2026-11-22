@@ -28,7 +28,7 @@ public static class Catalog
     public static readonly IReadOnlySet<string> CapsulWidgets = new HashSet<string>
     {
         "clock", "weather", "forecast", "media", "volume", "stat", "gauge", "chart", "meters", "gpu", "topprocs", "processes",
-        "shortcuts", "button", "discord", "discord-controls", "steam", "steam-activity", "steam-library", "batteries", "battery", "label", "timer", "stack",
+        "shortcuts", "button", "discord", "discord-controls", "steam", "steam-activity", "steam-library", "shutdown-timer", "batteries", "battery", "label", "timer", "stack",
         "audio-mixer", "app-volume", "device-volume", "audio-outputs", "microphone", "media-remote", "media-seek",
         "power-controls", "system-keys", "hotkeys", "macro-pad", "push",
     };

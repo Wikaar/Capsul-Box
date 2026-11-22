@@ -500,6 +500,52 @@ W['steam-library'] = {
   },
 };
 
+// Capsul Box: таймер выключения ПК — пресеты, обратный отсчёт и отмена. Выключает сама Windows (shutdown /t).
+W['shutdown-timer'] = {
+  needs: ['tick'],
+  create(box, { o }) {
+    let st = null, failed = false, busy = false;
+    const load = async () => { try { st = await api('/shutdown-timer', 'GET', 4000); failed = false; } catch (_) { failed = true; } };
+    const set = async (minutes) => {
+      if (busy) return;
+      busy = true; haptic();
+      try {
+        const r = await fetch(`${API}/shutdown-timer?minutes=${minutes}`, { method: 'POST', cache: 'no-store', headers: PANEL_HEADERS });
+        const j = await r.json().catch(() => ({}));
+        if (!r.ok) toast(j.error || 'Не получилось', 'err');
+        else { st = j; toast(minutes ? `ПК выключится через ${minutes} мин` : 'Таймер выключения отменён', 'ok'); }
+      } catch (_) { toast(t('panel.pcNoAnswer'), 'err'); }
+      busy = false; render();
+    };
+    const left = () => {
+      const ms = Math.max(0, (st?.deadline || 0) - Date.now());
+      const s = Math.round(ms / 1000), hh = Math.floor(s / 3600), mm = Math.floor(s / 60) % 60, ss = s % 60;
+      return (hh ? hh + ':' + String(mm).padStart(2, '0') : String(mm)) + ':' + String(ss).padStart(2, '0');
+    };
+    const presets = String(o.presets || '30,60,90,120').split(',').map((x) => parseInt(x, 10)).filter((x) => x > 0 && x <= 1440).slice(0, 6);
+    const btn = (label, cls, fn) => { const b = h('button', 'stt-btn ' + cls, label); b.addEventListener('click', fn); return b; };
+    let lastKey = '';
+    const render = () => {
+      const active = !!(st?.deadline && st.deadline > Date.now());
+      const key = JSON.stringify([!!st, failed, st?.allowed, active, st?.deadline, busy]);
+      if (key === lastKey) { const c = box.querySelector('.stt-count'); if (c && active) c.textContent = left(); return; }
+      lastKey = key;
+      const title = h('div', 'w-title', o.title || 'Выключение ПК');
+      if (!st) { box.replaceChildren(title, h('div', 'empty', t(failed ? 'w.unavailable' : 'w.loading'))); return; }
+      if (!st.allowed) { box.replaceChildren(title, h('div', 'empty', 'В настройках агента включи «Enable hold-to-confirm power controls»')); return; }
+      if (active) {
+        box.replaceChildren(title, h('div', 'stt-wrap', h('div', 'stt-label', 'ПК выключится через'), h('div', 'stt-count', left()),
+          btn('Отменить', 'stt-cancel', () => set(0))));
+        return;
+      }
+      box.replaceChildren(title, h('div', 'stt-grid', ...presets.map((m) => btn(m >= 60 && m % 60 === 0 ? `${m / 60} ч` : `${m} мин`, '', () => set(m)))));
+    };
+    const tick = every(15000, async () => { await load(); render(); });
+    const clock = setInterval(render, 1000);
+    return { update: () => { tick(); render(); }, destroy: () => clearInterval(clock) };
+  },
+};
+
 // A short local history of public Steam presence changes (not private chat messages).
 W['steam-activity'] = {
   needs: ['tick'],

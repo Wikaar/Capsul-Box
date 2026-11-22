@@ -1355,3 +1355,12 @@ body.controls-top .ap-foot { order: -1; margin-bottom: 4px; }
 .sl-cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .sl-initial { font-size: 28px; font-weight: 700; opacity: .5; }
 .sl-name { font-size: 11.5px; line-height: 1.25; opacity: .85; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+
+/* Capsul Box: таймер выключения */
+.stt-grid { flex: 1; display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; padding-top: 6px; }
+.stt-btn { border: 0; border-radius: 10px; background: rgba(255, 255, 255, .08); color: inherit; font: inherit; font-size: 18px; font-weight: 600; padding: 10px; }
+.stt-btn:active { background: rgba(255, 255, 255, .16); }
+.stt-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; }
+.stt-label { opacity: .7; font-size: 13px; }
+.stt-count { font-size: 44px; font-weight: 700; font-variant-numeric: tabular-nums; color: #f59e0b; }
+.stt-cancel { background: rgba(239, 68, 68, .2); color: #fca5a5; padding: 10px 24px; }
