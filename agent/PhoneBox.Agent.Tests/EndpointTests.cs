@@ -35,6 +35,6 @@ public sealed class EndpointTests
         Assert.Equal(new[] { "--config", "C:/test folder/config.json", "--port", "18765", "--restart" }, info.ArgumentList);
         Assert.False(info.UseShellExecute);
         var hosted = AppRestart.StartInfo("dotnet", ["--port", "18765"]);
-        Assert.EndsWith("PhoneBoxAgent.dll", hosted.ArgumentList[0]);
+        Assert.EndsWith("CapsulBoxAgent.dll", hosted.ArgumentList[0]);
     }
 }
