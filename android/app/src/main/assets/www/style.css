@@ -1364,3 +1364,7 @@ body.controls-top .ap-foot { order: -1; margin-bottom: 4px; }
 .stt-label { opacity: .7; font-size: 13px; }
 .stt-count { font-size: 44px; font-weight: 700; font-variant-numeric: tabular-nums; color: #f59e0b; }
 .stt-cancel { background: rgba(239, 68, 68, .2); color: #fca5a5; padding: 10px 24px; }
+
+/* Capsul Box: ПК выключен — ночной экран, а кнопка «Разбудить ПК» поверх него, под часами */
+body.night.offline #wake { top: auto; bottom: 12vh; left: 0; right: 0; margin: 0 auto; align-items: center; z-index: 31; }
+body.night.offline #wake button { color: #8a7a70; border-color: rgba(255, 255, 255, .12); background: rgba(255, 255, 255, .05); }

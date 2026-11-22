@@ -92,6 +92,8 @@ let configRequest = 0;
 let appliedConfigRequest = 0;
 let writeBarrier = 0; // config reads numbered below this started before the panel's own last write
 export let online = null;
+// Capsul Box: с какого момента ПК не отвечает — через минуту без ПК включается ночной экран (часы и «Разбудить ПК»)
+let offlineSince = 0;
 export let lastTouch = Date.now();
 export let lastUserTouch = 0;     // last real touch or key (rules wait a while after it)
 export let wakeUntil = 0;
@@ -2195,7 +2197,9 @@ export function tick() {
   $('nDate').textContent = now.toLocaleDateString(LOCALE, { weekday: 'long', day: 'numeric', month: 'long' });
   if (darkSince && Date.now() - darkSince > 30_000) darkRoom = true;
   const dark = darkRoom && cfg.display?.nightWhenDark === true;
-  setNight((isNight(now) || dark) && Date.now() > wakeUntil);
+  const pcOff = cfg.display?.pcOffNight !== false && offlineSince > 0
+    && Date.now() - offlineSince > Math.max(10, +(cfg.display?.pcOffNightSec ?? 60)) * 1000;
+  setNight((isNight(now) || dark || pcOff) && Date.now() > wakeUntil);
   if (!PREVIEW && idleDue() && !navQueue.some((r) => r.kind === 'home')) {
     if (curPage === homeIndex()) { closeSheet(); closeOverview(); lastNav = Date.now(); } // only a sheet to close
     else { navQueue.push({ kind: 'home', at: Date.now(), priority: -1 }); pump(); }
@@ -2357,6 +2361,7 @@ $('wake')?.querySelector('button').addEventListener('click', () => {
 
 export function setOnline(on) {
   document.body.classList.toggle('offline', !on);
+  if (on) offlineSince = 0; else if (!offlineSince) offlineSince = Date.now();
   if (on) { wakeAt = 0; clearInterval(wakeTicker); wakeTicker = 0; }
   wakeRender();
   if (on && online !== true) { loadConfig(); loadQuotas(); loadWork(); loadPush(); loadApprovals(); loadCalendar(); }
