@@ -10,6 +10,7 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
@@ -38,6 +39,7 @@ import android.webkit.WebView
 import android.webkit.WebChromeClient
 import android.webkit.WebViewClient
 import androidx.webkit.WebViewAssetLoader
+import com.google.zxing.integration.android.IntentIntegrator
 import androidx.webkit.WebViewCompat
 import androidx.webkit.WebViewFeature
 import org.json.JSONObject
@@ -130,6 +132,30 @@ class MainActivity : Activity(), SensorEventListener {
         super.onNewIntent(intent)
         setIntent(intent)
         handlePairingLink(intent)
+    }
+
+    /** Capsul Box: встроенный сканер QR для сопряжения по Wi-Fi — системные сканеры часто не открывают capsulbox://. */
+    private fun scanPairingQr() {
+        IntentIntegrator(this)
+            .setDesiredBarcodeFormats(IntentIntegrator.QR_CODE)
+            .setPrompt(getString(R.string.scan_prompt))
+            .setBeepEnabled(false)
+            .setOrientationLocked(false)
+            .initiateScan()
+    }
+
+    @Deprecated("Activity result API needs AndroidX Activity; the panel is a plain Activity")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        val scan = IntentIntegrator.parseActivityResult(requestCode, resultCode, data)
+        if (scan == null) { @Suppress("DEPRECATION") super.onActivityResult(requestCode, resultCode, data); return }
+        hideSystemUi()
+        val text = scan.contents ?: return // отменили
+        val uri = runCatching { Uri.parse(text.trim()) }.getOrNull()
+        if (AgentLink.PairLink.parse(uri) == null) {
+            Toast.makeText(this, getString(R.string.scan_not_pairing), Toast.LENGTH_LONG).show()
+            return
+        }
+        handlePairingLink(Intent(Intent.ACTION_VIEW, uri))
     }
 
     /** A pairing link from the computer's QR code (Settings › Wi-Fi › Pair a phone over Wi-Fi): ask, then pair. */
@@ -441,6 +467,10 @@ class MainActivity : Activity(), SensorEventListener {
 
         @JavascriptInterface
         fun forgetPc(key: String, id: String) { if (ok(key)) link.forget(id) }
+
+        /** Capsul Box: открыть встроенный сканер QR-кода сопряжения по Wi-Fi. */
+        @JavascriptInterface
+        fun scanPair(key: String) { if (ok(key)) runOnUiThread { scanPairingQr() } }
 
         /** True when the Wake button can work: the active computer's MACs are known and the phone is on a local network. */
         @JavascriptInterface

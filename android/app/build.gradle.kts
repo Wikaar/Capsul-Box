@@ -17,8 +17,8 @@ android {
         applicationId = "de.wikar.capsulbox"
         minSdk = 21 // Android 5.0; see CONTRIBUTING.md before changing it
         targetSdk = 35
-        versionCode = 4
-        versionName = "0.4.0"
+        versionCode = 5
+        versionName = "0.5.0"
     }
 
     signingConfigs {
@@ -60,6 +60,10 @@ android {
 
 dependencies {
     implementation("androidx.webkit:webkit:1.12.1")
+    // Capsul Box: сканер QR для сопряжения по Wi-Fi. Без транзитивных зависимостей и с zxing core 3.3.0 —
+    // так библиотека работает на Android 5.0+ (новые версии core требуют Android 7.0).
+    implementation("com.journeyapps:zxing-android-embedded:4.3.0") { isTransitive = false }
+    implementation("com.google.zxing:core:3.3.0")
     testImplementation("junit:junit:4.13.2")
     // android.jar's org.json is a stub on the JVM; the real one lets the unit tests build and read JSON
     testImplementation("org.json:json:20240303")

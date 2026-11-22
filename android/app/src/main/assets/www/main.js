@@ -53,7 +53,7 @@ export const $ = (id) => document.getElementById(id);
 // The native bridge (window.Android) is in every frame, sandboxed widgets included, so each call carries a key that only
 // the panel's own frames receive (MainActivity.bridgeKey). This wrapper adds it.
 const BRIDGE = ['battery', 'buzz', 'haptic', 'is24Hour', 'pcs', 'selectPc', 'forgetPc', 'setBrightness', 'setHomeScreen', 'setOrientation',
-  'setPinned', 'setVolumeKeys', 'transport', 'sensors', 'version', 'canListen', 'listen', 'stopListening', 'cancelListening', 'trackpad', 'canWake', 'wakePc'];
+  'setPinned', 'setVolumeKeys', 'transport', 'sensors', 'version', 'canListen', 'listen', 'stopListening', 'cancelListening', 'trackpad', 'canWake', 'wakePc', 'scanPair'];
 export const bridge = typeof Android === 'undefined' ? null : Object.fromEntries(BRIDGE.filter((m) => typeof Android[m] === 'function')
   .map((m) => [m, (...args) => Android[m](window.__phoneboxKey || '', ...args)]));
 // Live preview inside the agent's layout editor: the layout comes from the editor (unsaved), not from the agent.
@@ -1912,11 +1912,17 @@ export function openOverview() {
   renderRulesBtn();
   // several paired computers: switch between them here (a USB cable always wins)
   const pcs = pairedPcs();
+  // Capsul Box: сопряжение по Wi-Fi встроенным сканером QR (QR — в настройках агента: Общие › Wi-Fi)
+  const scan = bridge?.scanPair ? [(() => {
+    const b = h('button', 'ov-pc', '📷 Wi‑Fi по QR');
+    b.addEventListener('click', (e) => { e.stopPropagation(); haptic(); closeOverview(); bridge.scanPair(); });
+    return b;
+  })()] : [];
   $('ovPcs').replaceChildren(...(pcs.length > 1 ? pcs.map((pc) => {
     const b = h('button', 'ov-pc' + (pc.active ? ' on' : ''), icon('monitor', 'm'), pc.name || t('panel.computer'));
     b.addEventListener('click', (e) => { e.stopPropagation(); switchPc(pc); });
     return b;
-  }) : []));
+  }) : []), ...scan);
   $('ovGrid').style.setProperty('--n', Math.min(4, Math.ceil(Math.sqrt(pages.length * 1.6))));
   ov.hidden = false;
 }
