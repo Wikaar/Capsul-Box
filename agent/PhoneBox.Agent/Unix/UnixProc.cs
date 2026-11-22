@@ -15,7 +15,7 @@ public static class UnixProc
         "kernel_task", "launchd", "WindowServer", "loginwindow", "Dock", "Finder", "SystemUIServer", "coreaudiod", "mds", "mds_stores",
         "cfprefsd", "distnoted", "ControlCenter", "NotificationCenter",
         // ours
-        "PhoneBoxAgent", "adb", "dotnet",
+        "PhoneBoxAgent", "CapsulBoxAgent", "adb", "dotnet",
     };
 
     private record PsRow(uint Uid, string Path, string Args);

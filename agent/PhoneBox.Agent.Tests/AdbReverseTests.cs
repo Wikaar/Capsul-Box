@@ -117,7 +117,7 @@ public sealed class AdbReverseTests : IDisposable
     [InlineData(true, true)]
     public async Task KeepAwakeIsReappliedOnlyAfterDisconnect(bool disconnect, bool secondPhone)
     {
-        const string rule = "UsbFfs tcp:8765 tcp:8765";
+        const string rule = "UsbFfs tcp:8775 tcp:8775";
         const string awake = "shell settings put global stay_on_while_plugged_in 7";
         string[] devices = secondPhone ? ["FAKE1", "FAKE2"] : ["FAKE1"];
         var fake = FakeAdb(devices, rule, null);
@@ -157,8 +157,8 @@ public sealed class AdbReverseTests : IDisposable
         using var adb = new AdbReverse(store, NullLogger<AdbReverse>.Instance);
         var ensure = typeof(AdbReverse).GetMethod("Ensure", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!;
         Task Pass() => (Task)ensure.Invoke(adb, [CancellationToken.None])!;
-        const string first = "-s FAKE1 reverse tcp:8765 tcp:8765";
-        const string second = "-s FAKE2 reverse tcp:8765 tcp:8765";
+        const string first = "-s FAKE1 reverse tcp:8775 tcp:8775";
+        const string second = "-s FAKE2 reverse tcp:8775 tcp:8775";
 
         await Pass();
         Assert.Contains(first, Calls());
@@ -187,8 +187,8 @@ public sealed class AdbReverseTests : IDisposable
         using var adb = new AdbReverse(store, NullLogger<AdbReverse>.Instance);
         var ensure = typeof(AdbReverse).GetMethod("Ensure", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!;
         await (Task)ensure.Invoke(adb, [CancellationToken.None])!;
-        Assert.DoesNotContain($"-s {refused} reverse tcp:8765 tcp:8765", Calls());
-        if (working is not null) Assert.Contains($"-s {working} reverse tcp:8765 tcp:8765", Calls());
+        Assert.DoesNotContain($"-s {refused} reverse tcp:8775 tcp:8775", Calls());
+        if (working is not null) Assert.Contains($"-s {working} reverse tcp:8775 tcp:8775", Calls());
     }
 
     /// <summary>Runs the loop until <paramref name="done"/> holds or three rounds ("adb devices" calls) went by.</summary>
@@ -221,7 +221,7 @@ public sealed class AdbReverseTests : IDisposable
     [Fact]
     public async Task ARefusedHomeScreenOnOnePhoneDoesNotHoldBackTheOthersOrKeepAwake()
     {
-        var fake = FakeAdb(["FAKE1", "FAKE2"], "UsbFfs tcp:8765 tcp:8765", homeRefused: "FAKE1");
+        var fake = FakeAdb(["FAKE1", "FAKE2"], "UsbFfs tcp:8775 tcp:8775", homeRefused: "FAKE1");
         const string awake = "shell settings put global stay_on_while_plugged_in 7";
         var calls = await RunUntil(fake, new { adbPath = fake, display = new { homeScreen = true, keepAwake = true, followComputerLock = false } }, null,
             c => c.Contains("-s FAKE2 " + awake) && c.Contains("-s FAKE1 " + awake));
@@ -232,16 +232,16 @@ public sealed class AdbReverseTests : IDisposable
 
     /// <summary>
     /// A rule left by an agent on another port (--port) points the phone at a port nobody listens on; the agent must
-    /// point it back at itself instead of taking any "tcp:8765" in the list for its own rule.
+    /// point it back at itself instead of taking any "tcp:8775" in the list for its own rule.
     /// </summary>
     [Theory]
-    [InlineData("UsbFfs tcp:8765 tcp:18765", 8765)]   // a development agent ran before
-    [InlineData("UsbFfs tcp:8765 tcp:8765", 18765)]   // the development agent itself, after the installed one
-    [InlineData("UsbFfs tcp:9000 tcp:8765", 8765)]    // some other rule onto the computer's 8765
+    [InlineData("UsbFfs tcp:8775 tcp:18765", 8775)]   // a development agent ran before
+    [InlineData("UsbFfs tcp:8775 tcp:8775", 18765)]   // the development agent itself, after the installed one
+    [InlineData("UsbFfs tcp:9000 tcp:8775", 8775)]    // some other rule onto the computer's 8775
     public async Task AReverseRuleToAnotherPortIsPointedAtThisAgent(string existing, int port)
     {
         var fake = FakeAdb(["FAKE1"], existing, homeRefused: null);
-        var want = $"-s FAKE1 reverse tcp:8765 tcp:{port}";
+        var want = $"-s FAKE1 reverse tcp:8775 tcp:{port}";
         var calls = await RunUntil(fake, new { adbPath = fake, deviceSerial = "FAKE1", display = new { homeScreen = false, keepAwake = false } },
             new AgentEndpoint(port), c => c.Contains(want));
         Assert.Contains(want, calls);
@@ -251,7 +251,7 @@ public sealed class AdbReverseTests : IDisposable
     [Fact]
     public async Task TheAgentsOwnRuleIsLeftAlone()
     {
-        var fake = FakeAdb(["FAKE1"], "UsbFfs tcp:8765 tcp:8765", homeRefused: null);
+        var fake = FakeAdb(["FAKE1"], "UsbFfs tcp:8775 tcp:8775", homeRefused: null);
         var calls = await RunUntil(fake, new { adbPath = fake, deviceSerial = "FAKE1", display = new { homeScreen = false, keepAwake = false } },
             null, _ => false);
         Assert.True(calls.Count(c => c == "devices") >= 2, "the loop did not run twice");
@@ -271,7 +271,7 @@ public sealed class AdbReverseTests : IDisposable
         var calls = await RunUntil(fake, new { adbPath = fake, deviceSerial = "FAKE1",
                 display = new { homeScreen = false, keepAwake = false, followComputerLock = false, openOnConnect } },
             null, c => c.Count(x => x == "devices") >= 2);
-        Assert.Contains("-s FAKE1 reverse tcp:8765 tcp:8765", calls);
+        Assert.Contains("-s FAKE1 reverse tcp:8775 tcp:8775", calls);
         Assert.Equal(openOnConnect, calls.Contains("-s FAKE1 shell am start -n de.wikar.capsulbox/.MainActivity"));
         Assert.Equal(openOnConnect, calls.Contains("-s FAKE1 shell input keyevent KEYCODE_WAKEUP"));
     }
@@ -291,7 +291,7 @@ public sealed class AdbReverseTests : IDisposable
             null, c => c.Count(x => x == "devices") >= 3);
         Assert.Equal(1, calls.Count(x => x == "-s FAKE1 shell am start -n de.wikar.capsulbox/.MainActivity"));
         // and the rule is set once: setting it again drops the panel's open connection
-        Assert.Equal(1, calls.Count(x => x == "-s FAKE1 reverse tcp:8765 tcp:8765"));
+        Assert.Equal(1, calls.Count(x => x == "-s FAKE1 reverse tcp:8775 tcp:8775"));
         Assert.DoesNotContain("-s FAKE1 reverse --list", calls);
         Assert.Equal(1, calls.Count(x => x == "-s FAKE1 shell getprop ro.build.version.sdk"));
     }
@@ -312,7 +312,7 @@ public sealed class AdbReverseTests : IDisposable
         using var adb = new AdbReverse(store, NullLogger<AdbReverse>.Instance);
         var ensure = typeof(AdbReverse).GetMethod("Ensure", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!;
         Task Pass() => (Task)ensure.Invoke(adb, [CancellationToken.None])!;
-        const string rule = "-s FAKE1 reverse tcp:8765 tcp:8765";
+        const string rule = "-s FAKE1 reverse tcp:8775 tcp:8775";
 
         await Pass();
         await Pass();
@@ -325,7 +325,7 @@ public sealed class AdbReverseTests : IDisposable
         Assert.DoesNotContain("-s FAKE1 reverse --list", Calls());
     }
 
-    /// <summary>A newer phone that lists no rule for this agent (the adb server restarted, or another agent took tcp:8765)
+    /// <summary>A newer phone that lists no rule for this agent (the adb server restarted, or another agent took tcp:8775)
     /// gets the rule set again: only Android 5 and 6 rely on what the agent remembers.</summary>
     [Fact]
     public async Task ANewerPhoneWhoseRuleIsGoneGetsItBack()
@@ -333,9 +333,9 @@ public sealed class AdbReverseTests : IDisposable
         var fake = FakeAdb(["FAKE1"], "", homeRefused: null, sdk: 34);
         var calls = await RunUntil(fake, new { adbPath = fake, deviceSerial = "FAKE1",
                 display = new { homeScreen = false, keepAwake = false, followComputerLock = false, openOnConnect = false } },
-            null, c => c.Count(x => x == "-s FAKE1 reverse tcp:8765 tcp:8765") >= 2);
+            null, c => c.Count(x => x == "-s FAKE1 reverse tcp:8775 tcp:8775") >= 2);
         Assert.Contains("-s FAKE1 reverse --list", calls);
-        Assert.True(calls.Count(x => x == "-s FAKE1 reverse tcp:8765 tcp:8765") >= 2, string.Join(" | ", calls));
+        Assert.True(calls.Count(x => x == "-s FAKE1 reverse tcp:8775 tcp:8775") >= 2, string.Join(" | ", calls));
     }
 
     [Fact]
@@ -362,9 +362,9 @@ public sealed class AdbReverseTests : IDisposable
         var fake = FakeAdb(["FAKE1"], "", homeRefused: null, usbKey: UsbKey);
         var usb = new UsbLink(45678, Pin);
         var calls = await RunUntil(fake, new { adbPath = fake, deviceSerial = "FAKE1", display = new { homeScreen = false, keepAwake = false, followComputerLock = false } },
-            new AgentEndpoint(8765), c => c.Contains("-s FAKE1 shell am start -n de.wikar.capsulbox/.MainActivity"), usb);
-        Assert.Contains("-s FAKE1 reverse tcp:8765 tcp:45678", calls);
-        Assert.DoesNotContain("-s FAKE1 reverse tcp:8765 tcp:8765", calls);
+            new AgentEndpoint(8775), c => c.Contains("-s FAKE1 shell am start -n de.wikar.capsulbox/.MainActivity"), usb);
+        Assert.Contains("-s FAKE1 reverse tcp:8775 tcp:45678", calls);
+        Assert.DoesNotContain("-s FAKE1 reverse tcp:8775 tcp:8775", calls);
         Assert.Contains(KeyQuery, calls);
         Assert.Contains(PinWrite, calls); // the app pins the tunnel's certificate
         Assert.True(Array.IndexOf(calls, Dumpsys) < Array.IndexOf(calls, KeyQuery), "the provider's owner is checked first");
@@ -378,15 +378,15 @@ public sealed class AdbReverseTests : IDisposable
     /// but the phone was not just plugged in, so it is neither woken nor brought to the panel.
     /// </summary>
     [Theory]
-    [InlineData("UsbFfs tcp:8765 tcp:8765")]  // an agent from before the USB port
-    [InlineData("UsbFfs tcp:8765 tcp:51234")] // this agent's previous run
+    [InlineData("UsbFfs tcp:8775 tcp:8775")]  // an agent from before the USB port
+    [InlineData("UsbFfs tcp:8775 tcp:51234")] // this agent's previous run
     public async Task AnAgentRestartMovesTheTunnelWithoutWakingThePhone(string existing)
     {
         var fake = FakeAdb(["FAKE1"], existing, homeRefused: null, usbKey: UsbKey);
         var usb = new UsbLink(45678, Pin);
         var calls = await RunUntil(fake, new { adbPath = fake, deviceSerial = "FAKE1", display = new { homeScreen = false, keepAwake = false, followComputerLock = false } },
-            new AgentEndpoint(8765), c => c.Count(x => x == "devices") >= 2, usb);
-        Assert.Contains("-s FAKE1 reverse tcp:8765 tcp:45678", calls);
+            new AgentEndpoint(8775), c => c.Count(x => x == "devices") >= 2, usb);
+        Assert.Contains("-s FAKE1 reverse tcp:8775 tcp:45678", calls);
         Assert.DoesNotContain(calls, c => c.Contains("am start") || c.Contains("KEYCODE_WAKEUP"));
         Assert.True(usb.HasKey("FAKE1"));
     }
@@ -401,13 +401,13 @@ public sealed class AdbReverseTests : IDisposable
         var fake = FakeAdb(["FAKE1"], "", homeRefused: null, usbKey: null, appVersion: "0.9.23");
         var usb = new UsbLink(45678, Pin);
         var calls = await RunUntil(fake, new { adbPath = fake, deviceSerial = "FAKE1", display = new { homeScreen = false, keepAwake = false, followComputerLock = false } },
-            new AgentEndpoint(8765), c => c.Count(x => x == "devices") >= 3, usb);
+            new AgentEndpoint(8775), c => c.Count(x => x == "devices") >= 3, usb);
         Assert.True(calls.Count(c => c == "devices") >= 3, "the loop did not run three times");
         Assert.Equal(1, calls.Count(c => c == Dumpsys));
         Assert.DoesNotContain(KeyQuery, calls);
         Assert.DoesNotContain(PinWrite, calls);
         Assert.False(usb.HasKey("FAKE1"));
-        Assert.Contains("-s FAKE1 reverse tcp:8765 tcp:45678", calls);
+        Assert.Contains("-s FAKE1 reverse tcp:8775 tcp:45678", calls);
     }
 
     /// <summary>
@@ -420,7 +420,7 @@ public sealed class AdbReverseTests : IDisposable
         var fake = FakeAdb(["FAKE1"], "", homeRefused: null, usbKey: UsbKey, appVersion: "0.9.23", ownsProvider: false);
         var usb = new UsbLink(45678, Pin);
         var calls = await RunUntil(fake, new { adbPath = fake, deviceSerial = "FAKE1", display = new { homeScreen = false, keepAwake = false, followComputerLock = false } },
-            new AgentEndpoint(8765), c => c.Count(x => x == "devices") >= 2, usb);
+            new AgentEndpoint(8775), c => c.Count(x => x == "devices") >= 2, usb);
         Assert.Contains(Dumpsys, calls);
         Assert.DoesNotContain(KeyQuery, calls);
         Assert.DoesNotContain(PinWrite, calls);
@@ -429,8 +429,8 @@ public sealed class AdbReverseTests : IDisposable
     }
 
     [Theory]
-    [InlineData("UsbFfs tcp:8765 tcp:8765", true)]
-    [InlineData("UsbFfs tcp:9000 tcp:8765", false)]
+    [InlineData("UsbFfs tcp:8775 tcp:8775", true)]
+    [InlineData("UsbFfs tcp:9000 tcp:8775", false)]
     [InlineData("", false)]
     public void AnyRuleForThePhonesPortCounts(string list, bool expected) => Assert.Equal(expected, AdbReverse.HasAnyRule(list));
 
@@ -445,7 +445,7 @@ public sealed class AdbReverseTests : IDisposable
         File.WriteAllText(path, "{}");
         var services = new Microsoft.Extensions.DependencyInjection.ServiceCollection();
         Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton(services, new ConfigStore(path));
-        Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton(services, new AgentEndpoint(8765));
+        Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton(services, new AgentEndpoint(8775));
         var usb = new UsbLink(45678, Pin);
         Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions.AddSingleton(services, usb);
         Microsoft.Extensions.DependencyInjection.LoggingServiceCollectionExtensions.AddLogging(services);

@@ -226,7 +226,7 @@ public sealed class LanConfig
 {
     /// <summary>Also accept the phone over Wi-Fi (HTTPS + token, paired over USB). Requires an agent restart.</summary>
     public bool Enabled { get; set; }
-    public int Port { get; set; } = 8766;
+    public int Port { get; set; } = 8776;
     /// <summary>Shared secret handed to the phone over USB. Empty = generate a new one (forces re-pairing).</summary>
     public string? Token { get; set; }
     /// <summary>Separate key for the webhook API from other machines (push/notify/goto/refresh only). May appear in URLs.</summary>

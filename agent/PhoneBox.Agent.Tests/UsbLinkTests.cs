@@ -72,7 +72,7 @@ public class UsbLinkTests
     [Fact]
     public void AWebPageCannotUseTheTunnelEvenWithTheKey()
     {
-        Assert.Equal(UsbLink.Access.Forbidden, Linked().Authorize("GET", "/api/state", "http://127.0.0.1:8765", "Bearer " + Key));
+        Assert.Equal(UsbLink.Access.Forbidden, Linked().Authorize("GET", "/api/state", "http://127.0.0.1:8775", "Bearer " + Key));
     }
 
     [Fact]

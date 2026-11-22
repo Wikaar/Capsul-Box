@@ -130,7 +130,7 @@ class WakeTest {
     }
 
     private fun storedComputer(): JSONObject = JSONObject().put("id", "fp").put("name", "Desk")
-        .put("hosts", JSONArray(listOf("192.168.1.5"))).put("port", 8766).put("token", "t")
+        .put("hosts", JSONArray(listOf("192.168.1.5"))).put("port", 8776).put("token", "t")
 
     @Test
     fun aComputerStoredByAnOlderVersionWithoutMacsStillLoads() {
@@ -154,7 +154,7 @@ class WakeTest {
 
     @Test
     fun macsSurviveASaveAndLoad() {
-        val pc = AgentLink.Pc("fp", "Desk", listOf("192.168.1.5"), 8766, "t", listOf("AA:BB:CC:DD:EE:01", "AA:BB:CC:DD:EE:02"))
+        val pc = AgentLink.Pc("fp", "Desk", listOf("192.168.1.5"), 8776, "t", listOf("AA:BB:CC:DD:EE:01", "AA:BB:CC:DD:EE:02"))
         assertEquals(listOf("AA:BB:CC:DD:EE:01", "AA:BB:CC:DD:EE:02"), AgentLink.Pc.from(pc.json()).macs)
     }
 }

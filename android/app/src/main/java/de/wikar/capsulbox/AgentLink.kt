@@ -24,7 +24,7 @@ import javax.net.ssl.X509TrustManager
 /**
  * Connection to the PhoneBox agent on the PC.
  *
- * 1. USB: https://127.0.0.1:8765, tunnelled by "adb reverse" while the cable is plugged in. Every app on the phone can
+ * 1. USB: https://127.0.0.1:8775, tunnelled by "adb reverse" while the cable is plugged in. Every app on the phone can
  *    reach that address, so the TLS certificate is pinned (the agent writes the pin over adb) and each request carries
  *    this app's own key ([UsbKey]), which the agent reads over adb.
  * 2. Wi-Fi / Tailscale: https://<pc-address>:<port>. The address list, a token and the SHA-256 fingerprint of the
@@ -69,7 +69,7 @@ class AgentLink(private val context: Context) {
             val fp = prefs.getString("fingerprint", null)
             val token = prefs.getString("token", null)
             if (fp != null && token != null) {
-                val pc = Pc(fp, prefs.getString("pc", "") ?: "", prefs.getString("hosts", "")!!.split(',').filter { it.isNotBlank() }, prefs.getInt("port", 8766), token)
+                val pc = Pc(fp, prefs.getString("pc", "") ?: "", prefs.getString("hosts", "")!!.split(',').filter { it.isNotBlank() }, prefs.getInt("port", 8776), token)
                 prefs.edit().clear().putString("pcs", JSONArray().put(pc.json()).toString()).putString("active", fp).apply()
             }
         }
@@ -634,7 +634,7 @@ class AgentLink(private val context: Context) {
     }
 
     companion object {
-        private const val USB_BASE = "https://127.0.0.1:8765"
+        private const val USB_BASE = "https://127.0.0.1:8775"
         /** The agent sends "state" every second, so a silent connection for this long is dead. */
         private const val STREAM_READ_TIMEOUT = 8000
     }

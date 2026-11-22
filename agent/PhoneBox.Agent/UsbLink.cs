@@ -6,12 +6,12 @@ using System.Text.RegularExpressions;
 namespace PhoneBox.Agent;
 
 /// <summary>
-/// The phone's USB connection. "adb reverse" makes 127.0.0.1:8765 on the phone reach the computer, but that address on
+/// The phone's USB connection. "adb reverse" makes 127.0.0.1:8775 on the phone reach the computer, but that address on
 /// the phone is open to every app there, not only PhoneBox. So the tunnel ends on a port of its own (not the local port
 /// the settings page, the tray and the hooks use), and every request on it must carry the key the PhoneBox app made.
 /// The agent reads that key over adb from a content provider that only the adb shell may read (it needs the DUMP
 /// permission, which no installed app can hold), and writes the fingerprint of its certificate there the same way.
-/// The app talks TLS to the tunnel and pins that certificate, so an app that took the phone's port 8765 before the
+/// The app talks TLS to the tunnel and pins that certificate, so an app that took the phone's port 8775 before the
 /// tunnel never sees the key. Before both, the agent checks that the provider belongs to the PhoneBox app: an app
 /// that claimed the same provider name first must not be able to choose the key.
 /// With the key, the phone reaches the same paths as over Wi-Fi, plus the two only USB has: the Wi-Fi pairing data and

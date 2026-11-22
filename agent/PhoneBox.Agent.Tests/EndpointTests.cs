@@ -8,8 +8,8 @@ public sealed class EndpointTests
     {
         var standard = AgentEndpoint.FromArgs([]);
         var isolated = AgentEndpoint.FromArgs(["--config", "test.json", "--port", "18765"]);
-        Assert.Equal(8765, standard.Port);
-        Assert.Equal(@"Local\PhoneBox.Agent", standard.MutexName);
+        Assert.Equal(8775, standard.Port);
+        Assert.Equal(@"Local\CapsulBox.Agent", standard.MutexName);
         Assert.Equal("http://127.0.0.1:18765/", isolated.SettingsUrl);
         Assert.NotEqual(standard.MutexName, isolated.MutexName);
     }
@@ -18,7 +18,7 @@ public sealed class EndpointTests
     [InlineData("0")]
     [InlineData("65536")]
     [InlineData("not-a-port")]
-    [InlineData("8765; command")]
+    [InlineData("8775; command")]
     public void InvalidPortsAreRejected(string value) => Assert.Throws<ArgumentException>(() => AgentEndpoint.FromArgs(["--port", value]));
 
     [Fact]
