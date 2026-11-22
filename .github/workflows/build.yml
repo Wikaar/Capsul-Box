@@ -21,17 +21,48 @@ jobs:
           distribution: temurin
           java-version: 17
           cache: gradle
+      - name: Ключ подписи из секретов (если добавлен)
+        id: sign
+        env:
+          KEYSTORE_B64: ${{ secrets.CAPSULBOX_KEYSTORE_B64 }}
+          STORE_PASSWORD: ${{ secrets.CAPSULBOX_STORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.CAPSULBOX_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.CAPSULBOX_KEY_PASSWORD }}
+        run: |
+          if [ -n "$KEYSTORE_B64" ] && [ -n "$STORE_PASSWORD" ] && [ -n "$KEY_ALIAS" ]; then
+            echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/capsulbox.jks"
+            {
+              echo "PHONEBOX_STORE_FILE=$RUNNER_TEMP/capsulbox.jks"
+              echo "PHONEBOX_STORE_PASSWORD=$STORE_PASSWORD"
+              echo "PHONEBOX_KEY_ALIAS=$KEY_ALIAS"
+              echo "PHONEBOX_KEY_PASSWORD=${KEY_PASSWORD:-$STORE_PASSWORD}"
+            } >> "$GITHUB_ENV"
+            echo "signed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::Секреты подписи не добавлены — APK подписан случайным отладочным ключом и не встанет поверх прошлой сборки."
+            echo "signed=false" >> "$GITHUB_OUTPUT"
+          fi
       - name: Проверка API Android, тесты и сборка APK
         working-directory: android
         run: |
           chmod +x gradlew
-          ./gradlew lintDebug assembleDebug testDebugUnitTest --no-daemon --console=plain
+          task=assembleDebug; [ "${{ steps.sign.outputs.signed }}" = true ] && task=assembleRelease
+          ./gradlew lintDebug $task testDebugUnitTest --no-daemon --console=plain
       - name: Имя файла
-        run: cp android/app/build/outputs/apk/debug/app-debug.apk "CapsulBox-${GITHUB_SHA::7}.apk"
+        id: apk
+        run: |
+          ver=$(sed -n 's/.*versionName = "\(.*\)".*/\1/p' android/app/build.gradle.kts)
+          src=android/app/build/outputs/apk/debug/app-debug.apk
+          [ "${{ steps.sign.outputs.signed }}" = true ] && src=android/app/build/outputs/apk/release/app-release.apk
+          cp "$src" "CapsulBox-$ver.apk"
+          echo "version=$ver" >> "$GITHUB_OUTPUT"
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: capsulbox-apk
           path: CapsulBox-*.apk
+    outputs:
+      signed: ${{ steps.sign.outputs.signed }}
+      version: ${{ steps.apk.outputs.version }}
 
   agent:
     name: Агент для Windows
@@ -49,3 +80,34 @@ jobs:
         with:
           name: capsulbox-agent-win-x64
           path: out/
+
+  # Новая версия (versionName в android/app/build.gradle.kts) на main → релиз с постоянными ссылками.
+  # Только с постоянным ключом подписи, иначе APK из релиза нельзя было бы обновлять.
+  release:
+    name: Релиз
+    needs: [android, agent]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.android.outputs.signed == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      VERSION: ${{ needs.android.outputs.version }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Есть ли уже такой релиз
+        id: check
+        run: |
+          if gh release view "v$VERSION" >/dev/null 2>&1; then echo "exists=true" >> "$GITHUB_OUTPUT"; else echo "exists=false" >> "$GITHUB_OUTPUT"; fi
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        if: steps.check.outputs.exists == 'false'
+        with:
+          path: dl
+      - name: Публикация
+        if: steps.check.outputs.exists == 'false'
+        run: |
+          cp dl/capsulbox-apk/*.apk "CapsulBox-$VERSION.apk"
+          (cd dl/capsulbox-agent-win-x64 && zip -qr "../../CapsulBox-Agent-$VERSION-win-x64.zip" .)
+          gh release create "v$VERSION" "CapsulBox-$VERSION.apk" "CapsulBox-Agent-$VERSION-win-x64.zip" \
+            --title "Capsul Box $VERSION" --target "$GITHUB_SHA" \
+            --notes "APK для планшета и агент для Windows. Нужна Капсула v0.32.3 или новее. Обновление APK ставится поверх прежней версии."
