@@ -344,7 +344,36 @@ function radioView(box, options) {
   } else {
     wrap.append(track);
   }
-  box.append(wrap);
+
+  // «Сейчас играет»: обложка песни (или логотип станции), песня и станция — как в плеере Wikar Radio
+  const nowArt = h('img', 'radio-now-art');
+  nowArt.alt = '';
+  nowArt.decoding = 'async';
+  nowArt.draggable = false;
+  nowArt.onload = () => nowArt.classList.add('on');
+  nowArt.onerror = () => nowArt.classList.remove('on');
+  const nowTrack = h('div', 'radio-now-track');
+  const nowStation = h('div', 'radio-now-station');
+  const nowBar = h('div', 'radio-now', h('div', 'radio-now-art-box', nowArt), h('div', 'radio-now-text', h('div', 'radio-now-label', t('w.nowPlaying')), nowTrack, nowStation));
+  nowBar.hidden = true;
+  let nowArtKey = '';
+  const syncNow = (radio, items) => {
+    const station = radio && items.find(i => i.id === radio.id);
+    if (!station || !radio.track) { nowBar.hidden = true; return; }
+    nowBar.hidden = false;
+    nowTrack.textContent = radio.track;
+    nowStation.textContent = station.name;
+    const key = radio.artId ? `art:${radio.artId}` : `logo:${station.id}:${station.rev || ''}`;
+    if (key !== nowArtKey) {
+      nowArtKey = key;
+      nowArt.classList.remove('on');
+      nowArt.src = radio.artId
+        ? `${API}/art?id=${radio.artId}`
+        : `${API}/controls/radio-logo?id=${encodeURIComponent(station.id)}&v=${encodeURIComponent(station.rev || '')}`;
+    }
+  };
+
+  box.append(nowBar, wrap);
 
   const cards = new Map();
   let latestItems = [];
@@ -400,6 +429,7 @@ function radioView(box, options) {
   return (data) => {
     const items = filterItems(data.actions);
     latestItems = items;
+    syncNow(data.radio, items);
     if (!items.length) {
       cards.clear();
       empty(track, 'Assign radio streams in the computer’s Control Deck settings');

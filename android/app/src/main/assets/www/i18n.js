@@ -625,7 +625,7 @@
       's.cd.lead': 'Define bindings here, then add widgets to a page. Save applies changes. Executable paths and credentials stay on this computer.',
       's.cd.audio': 'Allow PC audio listening',
       's.cd.power': 'Enable hold-to-confirm power controls',
-      's.cd.radioLogos': 'Allow third-party radio logo lookup (Radio Browser / TuneIn)',
+      's.cd.radioLogos': 'Allow third-party radio logo and song cover lookup (Radio Browser / TuneIn / AMG Radio / iTunes)',
       's.cd.spotifyConn': 'Spotify connection',
       's.cd.clientId': 'Spotify Client ID',
       's.cd.deviceId': 'Spotify device ID (optional)',

@@ -903,8 +903,9 @@ app.MapGet("/api/phones", (ConfigStore cfg) =>
     }).OrderByDescending(p => p.lastSeen ?? 0));
 });
 
-app.MapGet("/api/art", (MediaMonitor media) =>
-    media.Art is { } art ? Results.File(art.Bytes, art.Mime) : Results.NotFound());
+app.MapGet("/api/art", (int? id, MediaMonitor media, ControlDeck deck) =>
+    (id is { } radioId && deck.RadioArt(radioId) is { } radioArt ? radioArt : media.Art) is { } art
+        ? Results.File(art.Bytes, art.Mime) : Results.NotFound());
 
 app.MapPost("/api/media/{action}", async (string action, long? ms, MediaMonitor media, ControlDeck deck, CancellationToken ct) =>
 {
