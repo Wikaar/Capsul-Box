@@ -103,6 +103,8 @@ public sealed class MediaMonitor(ILogger<MediaMonitor> log) : BackgroundService
         if (playing && tl.LastUpdatedTime.Year > 2000)
             pos += DateTimeOffset.Now - tl.LastUpdatedTime;
         var dur = tl.EndTime - tl.StartTime;
+        // live streams (radio in Capsule) report an "infinite" end; treat anything over a day as no length
+        if (dur > TimeSpan.FromDays(1)) dur = TimeSpan.Zero;
         if (dur > TimeSpan.Zero && pos > dur) pos = dur;
         if (pos < TimeSpan.Zero) pos = TimeSpan.Zero;
 
