@@ -68,10 +68,44 @@ public sealed class AdbReverse(ConfigStore cfg, ILogger<AdbReverse> log, AgentEn
         {
             // while the session is ending nothing is started; the loop goes on, for a shutdown that is cancelled
             if (SessionEnding) { await Task.Delay(TimeSpan.FromSeconds(4), ct); continue; }
-            try { await Ensure(ct); }
+            try { await Ensure(ct); _adbTimeouts = 0; }
             catch (OperationCanceledException) { return; }
+            catch (TimeoutException ex)
+            {
+                Report($"adb error: {ex.Message}");
+                // Capsul Box: an adb server left hanging (by an older agent, after an update or a replug) answers
+                // nothing, and every command times out until it is gone. Twice in a row → restart it ourselves.
+                if (++_adbTimeouts >= 2) { _adbTimeouts = 0; await RestartAdbServerAsync(); }
+            }
             catch (Exception ex) { Report($"adb error: {ex.Message}"); }
             await Task.Delay(TimeSpan.FromSeconds(4), ct);
+        }
+    }
+
+    private int _adbTimeouts;
+
+    /// <summary>"adb kill-server", and if even that hangs, ends the adb processes; the next command starts a fresh server.</summary>
+    private async Task RestartAdbServerAsync()
+    {
+        var adb = FindAdb(cfg.Get().AdbPath);
+        if (adb is null) return;
+        log.LogInformation("adb does not answer; restarting the adb server");
+        try
+        {
+            var psi = new ProcessStartInfo(adb, "kill-server")
+            {
+                RedirectStandardOutput = true, RedirectStandardError = true, UseShellExecute = false, CreateNoWindow = true,
+                WorkingDirectory = AppPaths.NeutralCwd,
+            };
+            await ToolProcess.RunAsync(psi, TimeSpan.FromSeconds(5), CancellationToken.None);
+            return;
+        }
+        catch (Exception ex) when (ex is TimeoutException or IOException or System.ComponentModel.Win32Exception) { }
+        foreach (var process in Process.GetProcessesByName(Path.GetFileNameWithoutExtension(adb)))
+        {
+            try { process.Kill(entireProcessTree: true); }
+            catch (Exception ex) { log.LogDebug("could not end adb process {Pid}: {Msg}", process.Id, ex.Message); }
+            finally { process.Dispose(); }
         }
     }
 
