@@ -261,7 +261,7 @@ W.media = {
         sourceIcon.innerHTML = sourceIcons[m.app] || '';
         q('.m-title').textContent = m.title || tp('Unknown track');
         q('.m-artist').textContent = [m.artist, m.album].filter(Boolean).join(' · ') || '—';
-        if (m.app === 'Internet Radio' && !(m.durMs > 0)) {
+        if (!(m.durMs > 0)) { // live stream (Internet Radio of the agent or radio in Capsule): no length
           q('.fill').style.width = m.playing ? '100%' : '0';
           q('.m-pos').textContent = fmtTime(m.posMs || 0);
           q('.m-dur').textContent = m.playing ? tp('LIVE') : '0:00';
