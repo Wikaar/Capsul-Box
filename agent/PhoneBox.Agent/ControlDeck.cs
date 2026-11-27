@@ -30,6 +30,10 @@ public sealed partial class ControlDeck : BackgroundService
     private int? _duckPercent;
     private readonly Dictionary<string, long> _sleep = [];
     private readonly RadioLogoCache _logos;
+    private readonly RadioNowPlaying _nowPlaying;
+
+    /// <summary>Cover or logo of the playing station for <c>/api/art</c>, or null for other ids.</summary>
+    public AlbumArt? RadioArt(int id) => _nowPlaying.Art(id);
     private readonly Lock _radioGate = new();
     private readonly Lock _radioState = new();
     private readonly SemaphoreSlim _focusGate = new(1, 1);
@@ -61,6 +65,9 @@ public sealed partial class ControlDeck : BackgroundService
         _tasks = new(config, log);
         _native = native;
         _logos = logos ?? new RadioLogoCache();
+        _nowPlaying = new RadioNowPlaying(
+            async (a, ct) => (RadioLogo?)await _logos.GetAsync(a, _config.Get().Controls.AllowOnlineRadioLogos, ct),
+            () => _config.Get().Controls.AllowOnlineRadioLogos);
         _native.SoundStopped += OnNativeSoundStopped;
         _ptt = new(id => _native.Audio().Devices.FirstOrDefault(d => d.Id == id && d.Direction == "input")?.Muted,
             (id, muted) => { try { var ok = _native.Device(id, null, muted); Invalidate(); return ok; } catch { return false; } }, () => Environment.TickCount64);
@@ -140,7 +147,14 @@ public sealed partial class ControlDeck : BackgroundService
             allowListening = c.Controls.AllowListening, allowPower = c.Controls.AllowPower,
             ducking = _duckPercent is not null,
             sleep,
+            radio = RadioNowPlayingForPhone(),
         };
+    }
+
+    private object? RadioNowPlayingForPhone()
+    {
+        _nowPlaying.Follow(GetPlayingRadioAction());
+        return _nowPlaying.Current is { } n ? new { id = n.StationId, track = n.Track, artId = n.ArtId } : null;
     }
 
     private void RefreshHardware()
@@ -500,6 +514,7 @@ public sealed partial class ControlDeck : BackgroundService
     public override void Dispose()
     {
         _native.SoundStopped -= OnNativeSoundStopped;
+        _nowPlaying.Dispose();
         base.Dispose();
         _ptt.Sweep(all: true);
         RestoreDucking();
@@ -759,9 +774,15 @@ public sealed partial class ControlDeck : BackgroundService
             var now = _now();
             long startedAt;
             lock (_radioState) { if (_radioStartedAt <= 0) _radioStartedAt = now; startedAt = _radioStartedAt; }
-            return new("Internet Radio", string.IsNullOrWhiteSpace(playing.Label) ? playing.Id : playing.Label,
-                "Live stream", "", true, Math.Max(0, now - startedAt), 0, 0, false);
+            _nowPlaying.Follow(playing);
+            var info = _nowPlaying.Current;
+            var station = string.IsNullOrWhiteSpace(playing.Label) ? playing.Id : playing.Label;
+            // with a song from the stream: song on top, station below (as in Wikar Radio)
+            return info?.Track is { } song
+                ? new("Internet Radio", song, station, "", true, Math.Max(0, now - startedAt), 0, info.ArtId, false)
+                : new("Internet Radio", station, "Live stream", "", true, Math.Max(0, now - startedAt), 0, info?.ArtId ?? 0, false);
         }
+        _nowPlaying.Follow(null);
         if (systemMedia is { Playing: true })
         {
             lock (_radioState) { _lastRadioId = null; _radioStartedAt = 0; _radioElapsedMs = 0; }

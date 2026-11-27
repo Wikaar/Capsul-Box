@@ -151,6 +151,20 @@ internal sealed class RadioLogoCache : IDisposable
 
         if (!allowOnlineLookup) return null;
 
+        // AMG Radio stations (Ретро Хит, Русский Рок, …) are often missing from directories: amgradio.ru has them all
+        if (AmgRadio.LooksLikeAmg(action))
+        {
+            try
+            {
+                if (AmgRadio.Match(action, await AmgRadio.ListAsync(_http, ct, 6L * 3600 * 1000)) is { } amg
+                    && Uri.TryCreate(amg.Logo, UriKind.Absolute, out var amgUri) && amgUri.Scheme is "http" or "https"
+                    && await DownloadRasterAsync(amgUri, ct) is { } amgImg)
+                    return amgImg;
+            }
+            catch (OperationCanceledException) when (ct.IsCancellationRequested) { throw; }
+            catch { }
+        }
+
         var searchName = CleanSearchName(action.Label);
         if (searchName.Length >= 2 && NormalizeKey(searchName).Length > 0)
         {
